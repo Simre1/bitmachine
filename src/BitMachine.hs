@@ -1,14 +1,14 @@
 module BitMachine
-  ( module BitCircuit,
-    module Bits,
-    module Circuit,
-    module Eval,
-    module Effects,
+  ( module BitMachine.BitCircuit,
+    module BitMachine.Bits,
+    module BitMachine.Circuit,
+    module BitMachine.Eval,
+    module BitMachine.Effects,
   )
 where
 
-import BitCircuit
-import Bits
-import Circuit
-import Effects
-import Eval
+import BitMachine.BitCircuit
+import BitMachine.Bits
+import BitMachine.Circuit
+import BitMachine.Effects
+import BitMachine.Eval

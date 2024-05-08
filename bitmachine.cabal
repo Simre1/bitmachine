@@ -19,12 +19,17 @@ library
     import:           warnings
     exposed-modules:  
         BitMachine
-        Circuit
-        Eval
-        Bits
-        BitCircuit
-        Proofs
-        Effects
+        BitMachine.Circuit
+        BitMachine.Circuit.Combinators
+        BitMachine.Circuit.Components
+        BitMachine.Eval
+        BitMachine.Bits
+        BitMachine.BitCircuit
+        BitMachine.BitCircuit.Combinators
+        BitMachine.Proofs
+        BitMachine.Effects
+
+        Data.List.Sized
     -- other-modules:
     -- other-extensions:
     build-depends:    
@@ -45,10 +50,19 @@ library
         TypeFamilies
         DataKinds
         NoStarIsType
-    --     RebindableSyntax
+        TypeAbstractions
+    ghc-options:
+        -fplugin=GHC.TypeLits.KnownNat.Solver
+        -fplugin=GHC.TypeLits.Normalise
 
 test-suite bitblast-test
     Type: exitcode-stdio-1.0
     hs-source-dirs: test 
     main-is: Main.hs
-    build-depends: base, bitmachine, hspec
+    default-language: GHC2021
+    build-depends: base, containers, bitmachine, hspec
+    default-extensions:
+        TypeFamilies
+        DataKinds
+        NoStarIsType
+        TypeAbstractions

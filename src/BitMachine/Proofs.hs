@@ -1,6 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-
-module Proofs where
+module BitMachine.Proofs where
 
 import Data.Constraint
 import Data.Type.Ord
@@ -19,7 +18,7 @@ ordToEq = fakeProof
 transitiveLesser :: forall a x b. ((a + x) < b) :- (a < b)
 transitiveLesser = fakeProof
 
-greaterToGreaterEqual :: forall n. (1 < n) :- (1 <= n)
+greaterToGreaterEqual :: forall x n. (x < n) :- (x + 1 <= n)
 greaterToGreaterEqual = fakeProof
 
 lesserToZero :: (n < 1) :- (n ~ 0)
@@ -42,6 +41,12 @@ symmetricAdd = fakeProof
 
 associativeAdd :: forall a b c. () :- ((a + b) + c ~ a + (b + c))
 associativeAdd = fakeProof
+
+mult0Makes0 :: forall a. () :- ((0 * a) ~ 0)
+mult0Makes0 = fakeProof
+
+withProof :: HasDict c e => e -> (c => r) -> r
+withProof = withDict 
 
 fakeProof :: a :- b
 fakeProof = unsafeCoerce (Sub $ unsafeCoerce $ Dict @())
