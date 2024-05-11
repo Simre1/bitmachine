@@ -19,8 +19,8 @@ prettyPrintBitCircuit extraShow bitCircuit = putDoc $ go bitCircuit <> line
       BCAnd -> "and"
       BCOr -> "or"
       BCNot -> "not"
-      BCSequence a b -> sep [go a, "->", go b]
-      BCPar a b -> vsep ["par", nest 2 ("(" <> go a <> ")"), nest 2 ( "(" <> go b <> ")")]
+      BCSequence a b -> align (go a) <+> "->" <+> align (go b)
+      BCPar a b -> vsep [nest 2 ("> " <> go a), nest 2 ("> " <> go b)] <> line
       BCHigh -> "1"
       BCId -> "id"
       BCDrop s -> "drop" <+> pretty (show $ fromIntegral @_ @Int $ fromSNat s)

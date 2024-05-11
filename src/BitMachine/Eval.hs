@@ -20,9 +20,8 @@ import Reactimate
 
 data Number (n :: Nat) = Number Integer Integer deriving (Eq, Ord)
 
-
 eval ::
-  forall a b .
+  forall a b.
   (BitRep a, BitRep b) =>
   (forall i o. NoEffect i o -> Number i -> IO (Number o)) ->
   [Number (Size a)] ->
@@ -53,23 +52,21 @@ eval runEffect inputs (Circuit bc) = do
        in (x, arr $ \(Number v1 u1) -> Number (v1 .&. setBits x) (u1 .&. setBits x))
     go (BCTake t) w =
       let x = (fromIntegral $ fromSNat t)
-       in (x, arr $ \(Number v u) -> Number (shiftR v (w-x)) (shiftR u (w-x)))
+       in (x, arr $ \(Number v u) -> Number (shiftR v (w - x)) (shiftR u (w - x)))
     go (BCAt index) w =
       let x = w - (fromIntegral $ fromSNat index) - 1
        in (1, arr $ \(Number v u) -> Number (shiftR v x .&. 1) (shiftR u x .&. 1))
-    -- go (BCFeedback outputSize bc') a =
-    --   let (b, signal) = go bc' (a + x)
-    --       x = fromIntegral $ fromSNat outputSize
-    --    in (b, feedbackSignal2 b signal)
-    -- bs' <- go bc' (bs <> bs')
-    -- pure bs'
-    -- go (BCEff outputSize f) _ = (fromIntegral $ fromSNat outputSize, arrIO $ runEffect f)
-    -- go (BCComponent _ bc') bs = go bc' bs
+    go (BCFeedback outputSize bc') a =
+      let (b, signal) = go bc' (a + x)
+          x = fromIntegral $ fromSNat outputSize
+       in (b, feedbackSignal2 b signal)
+    go (BCEff outputSize f) _ = (fromIntegral $ fromSNat outputSize, arrIO $ runEffect f)
+    go (BCComponent _ bc') bs = go bc' bs
     go bc x = error $ "Invalid bit circuit: " ++ show (bc, x)
 
 setBits :: Int -> Integer
 setBits 0 = 0
-setBits n = setBit (setBits (n - 1)) (n-1)
+setBits n = setBit (setBits (n - 1)) (n - 1)
 
 feedbackSignal2 :: forall a b. Int -> Signal (Number (a + b)) (Number b) -> Signal (Number a) (Number b)
 feedbackSignal2 outputSize signal =
@@ -87,12 +84,11 @@ feedbackSignal2 outputSize signal =
 evalNoEffect :: NoEffect a b -> x -> m y
 evalNoEffect _ _ = error "No Effect"
 
-
 toNumber :: forall n. (KnownNat n) => Integer -> Number n
 toNumber i = Number (i .&. setBits (fromIntegral $ fromSNat $ natSing @n)) 0
 
 instance (KnownNat n) => Show (Number n) where
-  show (Number v u) = toChar <$> [size - 1, size - 2..0]
+  show (Number v u) = toChar <$> [size - 1, size - 2 .. 0]
     where
       toChar p
         | testBit u p = 'U'
