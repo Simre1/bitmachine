@@ -18,76 +18,17 @@ import GHC.Stack (HasCallStack)
 import GHC.TypeNats
 import Reactimate
 
+data Number (n :: Nat) = Number Integer Integer deriving (Eq, Ord)
+
+
 eval ::
-  forall a b f.
-  (BitRep a, BitRep b) =>
-  (forall i o. f i o -> [SimBool] -> IO [SimBool]) ->
-  [(Int -> Bool)] ->
-  Circuit f a b ->
-  IO [[Bool]]
-eval runEffect initializers (Circuit bc) = do
-  let inputSize = fromIntegral $ fromSNat (natSing @(Size a))
-  outputs <- sample ((snd $ go bc inputSize)) inputs
-  forM outputs $ \output ->
-    maybe (fail "Does not converge") pure $ traverse fromSimBool output
-  where
-    inputs :: [[SimBool]]
-    inputs = initializers <&> \makeInitial -> toSimBool . makeInitial <$> [0 .. (fromIntegral $ natVal $ natSing @(Size a)) - 1]
-
-    go :: BitCircuit f n1 n2 -> Int -> (Int, Signal ([SimBool]) ([SimBool]))
-    go BCAnd 2 = (1, arr $ \([b1, b2]) -> [b1 `andSimBool` b2])
-    go BCOr 2 = (1, arr $ \([b1, b2]) -> [b1 `orSimBool` b2])
-    go BCNot 1 = (1, arr $ \([b]) -> [notSimBool b])
-    go (BCSequence c1 c2) a =
-      let (b, signal1) = go c1 a
-          (c, signal2) = go c2 b
-       in (c, signal1 >>> signal2)
-    go (BCPar c1 c2) a =
-      let (b, signal1) = go c1 a
-          (c, signal2) = go c2 a
-       in (b + c, (<>) <$> signal1 <*> signal2)
-    go BCHigh 0 = (1, pure [SBTrue])
-    go BCId i = (i, arr id)
-    go (BCDrop split) w =
-      let x = (fromIntegral $ fromSNat split)
-       in (w - x, arr $ \bs -> drop x bs)
-    go (BCTake split) _ =
-      let x = (fromIntegral $ fromSNat split)
-       in (x, arr $ \bs -> take x bs)
-    go (BCAt index) _ = (1, arr $ \bs -> [bs !! (fromIntegral $ fromSNat index)])
-    go (BCFeedback _ bc') a =
-      let (b, signal) = go bc' (a)
-       in (b, feedbackSignal b signal)
-    -- -- bs' <- go bc' (bs <> bs')
-    -- pure bs'
-    go (BCEff outputSize f) _ = (fromIntegral $ fromSNat outputSize, arrIO $ runEffect f)
-    -- go (BCComponent _ bc') bs = go bc' bs
-    go _ _ = error "Invalid bit circuit"
-
-feedbackSignal :: Int -> Signal [SimBool] [SimBool] -> Signal [SimBool] [SimBool]
-feedbackSignal outputSize signal =
-  feedback (const SBUnknown <$> [1 .. outputSize]) $
-    arrIO $ \(input, initialOutput) -> do
-      let loop unstableOutput = do
-            [output] <- sample (signal) [input ++ unstableOutput]
-            if output == unstableOutput
-              then pure output
-              else loop output
-
-      loop initialOutput
-
-data Number (n :: Nat) = Number Integer Integer
-
--- data Number = Number Int Integer
-
-eval2 ::
   forall a b .
   (BitRep a, BitRep b) =>
   (forall i o. NoEffect i o -> Number i -> IO (Number o)) ->
   [Number (Size a)] ->
   Circuit NoEffect a b ->
   IO [Number (Size b)]
-eval2 runEffect inputs (Circuit bc) = do
+eval runEffect inputs (Circuit bc) = do
   let inputSize = fromIntegral $ fromSNat (natSing @(Size a))
       outputSize = fromIntegral $ fromSNat (natSing @(Size b))
   outputs <- sample ((snd $ go bc inputSize)) inputs
@@ -146,7 +87,6 @@ feedbackSignal2 outputSize signal =
 evalNoEffect :: NoEffect a b -> x -> m y
 evalNoEffect _ _ = error "No Effect"
 
-data SimBool = SBTrue | SBFalse | SBUnknown deriving (Eq, Show)
 
 toNumber :: forall n. (KnownNat n) => Integer -> Number n
 toNumber i = Number (i .&. setBits (fromIntegral $ fromSNat $ natSing @n)) 0
@@ -159,29 +99,3 @@ instance (KnownNat n) => Show (Number n) where
         | testBit v p = '1'
         | otherwise = '0'
       size = fromIntegral $ natVal (natSing @n)
-
-fromSimBool :: SimBool -> Maybe Bool
-fromSimBool SBTrue = Just True
-fromSimBool SBFalse = Just False
-fromSimBool SBUnknown = Nothing
-
-toSimBool :: Bool -> SimBool
-toSimBool True = SBTrue
-toSimBool False = SBFalse
-
-andSimBool :: SimBool -> SimBool -> SimBool
-andSimBool SBTrue SBTrue = SBTrue
-andSimBool SBFalse _ = SBFalse
-andSimBool _ SBFalse = SBFalse
-andSimBool _ _ = SBUnknown
-
-orSimBool :: SimBool -> SimBool -> SimBool
-orSimBool SBTrue _ = SBTrue
-orSimBool _ SBTrue = SBTrue
-orSimBool SBFalse SBFalse = SBFalse
-orSimBool _ _ = SBUnknown
-
-notSimBool :: SimBool -> SimBool
-notSimBool SBTrue = SBFalse
-notSimBool SBFalse = SBTrue
-notSimBool SBUnknown = SBUnknown

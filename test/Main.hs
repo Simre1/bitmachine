@@ -15,45 +15,41 @@ main = hspec $ do
 
 circuitTests :: SpecWith ()
 circuitTests = do
-  it "ripple adder 1" $ do
-    res <-
-      eval
-        evalNoEffect
-        [([False, True, False, False, False, False, True, False] !!)]
-        (cRippleAdder @4)
-    pure $ res == [[False, True, True, False]]
+  it "ripple adder 1" $
+    eval
+      evalNoEffect
+      [toNumber $ 0b01000010]
+      (cRippleAdder @4)
+      `shouldReturn` [toNumber 0b0110]
 
   it "ripple adder 2" $
-    ( eval
-        evalNoEffect
-        [([True, True, False, False, False, False, False, True] !!)]
-        (cRippleAdder @4)
-    )
-      <&> (== [[True, True, False, True]])
+    eval
+      evalNoEffect
+      [toNumber $ 0b11000001]
+      (cRippleAdder @4)
+      `shouldReturn` [toNumber 0b1101]
 
   it "multiplexer 1" $
-    ( eval
-        evalNoEffect
-        [([False] !!)]
-        (cMultiplex (SLCons cLow (SLCons cHigh SLEmpty)))
-    )
-      <&> (== [[False]])
+    eval
+      evalNoEffect
+      [toNumber $ 0b0]
+      (cMultiplex (SLCons cLow (SLCons cHigh SLEmpty)))
+      `shouldReturn` [toNumber 0b0]
 
   it "multiplexer 2" $
-    ( eval
-        evalNoEffect
-        [([True, False] !!)]
-        ( cMultiplex
-            ( SLCons
-                cLow
-                ( SLCons
-                    cLow
-                    ( SLCons
-                        cHigh
-                        (SLCons cLow SLEmpty)
-                    )
-                )
-            )
-        )
-    )
-      <&> (== [[True]])
+    eval
+      evalNoEffect
+      [toNumber 0b10]
+      ( cMultiplex
+          ( SLCons
+              cLow
+              ( SLCons
+                  cLow
+                  ( SLCons
+                      cHigh
+                      (SLCons cLow SLEmpty)
+                  )
+              )
+          )
+      )
+      `shouldReturn` [toNumber 0b1]
