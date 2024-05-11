@@ -27,8 +27,14 @@ lesserToZero = fakeProof
 greaterStaysGreater :: forall k n x. (k < n) :- (k < (n + x))
 greaterStaysGreater = fakeProof
 
+plusSameStaysGreater :: forall k n x. (k < n) :- (k + x < n + x)
+plusSameStaysGreater = fakeProof
+
 plusMakesGreater :: forall n x. (0 < x) :- (n < n + x)
 plusMakesGreater = fakeProof
+
+minusMakesSmaller :: forall x n. (0 < x) :- (n - x < n)
+minusMakesSmaller = fakeProof
 
 lesserWithConstant :: forall n a b. (a < b) :- ((n + a) < (n + b))
 lesserWithConstant = fakeProof

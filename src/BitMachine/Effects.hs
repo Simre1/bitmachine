@@ -9,7 +9,7 @@ data ReaderF (n :: Nat) (a :: Nat) (b :: Nat) where
   ReaderF :: ReaderF n 0 n
 
 runReaderFBit :: forall n a b. (KnownNat n) => BitCircuit (ReaderF n) a b -> BitCircuit NoEffect (n + a) b
-runReaderFBit (BCEff ReaderF) = bcId
+runReaderFBit (BCEff _ ReaderF) = bcId
 runReaderFBit BCNot = (bcDrop @n) #>> bcNot
 runReaderFBit BCAnd = bcDrop @n #>> bcAnd
 runReaderFBit BCOr = bcDrop @n #>> bcOr

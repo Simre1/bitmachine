@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+
 module BitMachine.Circuit where
 
 import BitMachine.BitCircuit
@@ -16,7 +17,7 @@ data Circuit f a b where
 toBitCircuit :: Circuit f a b -> BitCircuit f (Size a) (Size b)
 toBitCircuit (Circuit bc) = bc
 
-fromBitCircuit :: BitCircuit f (Size a) (Size b) -> Circuit f a b
+fromBitCircuit :: forall a b f. BitCircuit f (Size a) (Size b) -> Circuit f a b
 fromBitCircuit bc = Circuit bc
 
 cMap :: (BitRep a, BitRep b) => Circuit NoEffect a b -> a -> b
@@ -89,9 +90,17 @@ cTake = Circuit bcTake
 cAt :: forall i f n. ((i < n), KnownNat i) => Circuit f (Bits n) (Bits 1)
 cAt = Circuit $ bcAt @i
 
-cEff :: forall a b f. f (Size a) (Size b) -> Circuit f a b
+cFeedback :: KnownNat (Size b) => Circuit f (a, b) b -> Circuit f a b
+cFeedback (Circuit bc) = Circuit $ bcFeedback bc
+
+cEff :: forall a b f. KnownNat (Size b) => f (Size a) (Size b) -> Circuit f a b
 cEff = Circuit . bcEff
 
 cCoerce :: forall a b f. (BitRep a, BitRep b, Size a ~ Size b) => Circuit f a b
 cCoerce = Circuit bcId
 
+cNor :: Circuit f (Bits 2) (Bits 1)
+cNor = Circuit bcNor
+
+cNand :: Circuit f (Bits 2) (Bits 1)
+cNand = Circuit bcNand

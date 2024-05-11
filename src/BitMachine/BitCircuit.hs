@@ -1,5 +1,6 @@
-{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+
 module BitMachine.BitCircuit where
 
 import Data.Kind
@@ -20,7 +21,8 @@ data BitCircuit (f :: Nat -> Nat -> Type) (a :: Nat) (b :: Nat) where
   BCDrop :: SNat a -> BitCircuit f (a + b) b
   BCTake :: SNat a -> BitCircuit f (a + b) a
   BCAt :: (i < n) => SNat i -> BitCircuit f n 1
-  BCEff :: f a b -> BitCircuit f a b
+  BCFeedback :: SNat b -> BitCircuit f (a + b) b -> BitCircuit f a b
+  BCEff :: SNat b -> f a b -> BitCircuit f a b
   BCComponent :: ComponentDescription -> BitCircuit f a b -> BitCircuit f a b
 
 data ComponentDescription = ComponentDescription
@@ -87,8 +89,18 @@ bcTake = BCTake natSing
 bcAt :: forall x n f. (x < n, KnownNat x) => BitCircuit f n 1
 bcAt = BCAt (natSing @x)
 
-bcEff :: f a b -> BitCircuit f a b
-bcEff = BCEff
+bcFeedback :: KnownNat b => BitCircuit f (a + b) b -> BitCircuit f a b
+bcFeedback = BCFeedback natSing
+
+bcEff :: KnownNat b => f a b -> BitCircuit f a b
+bcEff = BCEff natSing
 
 bcComponent :: ComponentDescription -> BitCircuit f a b -> BitCircuit f a b
 bcComponent = BCComponent
+
+bcNor :: BitCircuit f 2 1
+bcNor = bcOr #>> bcNot
+
+bcNand :: BitCircuit f 2 1
+bcNand = bcOr #>> bcNot
+

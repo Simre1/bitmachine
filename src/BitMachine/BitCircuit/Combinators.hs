@@ -37,8 +37,8 @@ bcMap bc = case cmpNat (natSing @n) (natSing @0) of
           bc
           (bcMap @a @b @(n - 1) bc)
 
-bcZipFold :: forall f n x. (KnownNat x, KnownNat n) => BitCircuit f (x + 2) (x + 1) -> BitCircuit f (x + n + n) n
-bcZipFold bc = case cmpNat (natSing @n) (natSing @0) of
+bcZipFoldRight :: forall f n x. (KnownNat x, KnownNat n) => BitCircuit f (x + 2) (x + 1) -> BitCircuit f (x + n + n) n
+bcZipFoldRight bc = case cmpNat (natSing @n) (natSing @0) of
   EQI -> (bcTake @0)
   LTI -> error "bcZipFold: impossible pattern match"
   GTI ->
@@ -64,7 +64,42 @@ bcZipFold bc = case cmpNat (natSing @n) (natSing @0) of
               )
                 #>> bcPar @(1 + x + (n - 1) + (n - 1)) @1 @(n - 1)
                   (bcTake @1)
-                  (bcDrop @1 #>> bcZipFold bc)
+                  (bcDrop @1 #>> bcZipFoldRight bc)
+
+bcZipFoldLeft :: forall f n x. (KnownNat x, KnownNat n) => BitCircuit f (2 + x) (1 + x) -> BitCircuit f (n + n + x) n
+bcZipFoldLeft bc = case cmpNat (natSing @n) (natSing @0) of
+  EQI -> (bcTake @0)
+  LTI -> error "bcZipFold: impossible pattern match"
+  GTI ->
+    withProof (ordToGreater @0 @n) $
+      withProof (greaterToGreaterEqual @0 @n) $
+        withProof (plusMakesGreater @(n + x) @n) $
+          withProof (plusMakesGreater @(x) @n) $
+            withProof (plusMakesGreater @(n) @n) $
+              withProof (minusMakesSmaller @1 @n) $
+                withProof (greaterStaysGreater @x @(n + x) @n) $
+                  withProof (plusSameStaysGreater @(n - 1) @(n) @n) $
+                    withProof (greaterStaysGreater @((n - 1) + n) @(n + n) @x) $
+                      withProof (greaterStaysGreater @n @(n + n) @x) $
+                        withProof (greaterStaysGreater @(n - 1) @(n) @n) $
+                          withProof (greaterStaysGreater @(n - 1) @(n + n) @x) $
+                            ( bcPar @(x + n + n) @((n - 1) + (n - 1)) @(x + 1) 
+                                ( bcPar @_ @(n - 1) @(n - 1)
+                                    (bcTake @(n - 1) @(n + 1 + x))
+                                    (bcDrop @n @(n + x) #>> bcTake @(n - 1) @(x + 1))
+                                )
+                                ( bcPar
+                                    (bcPar (bcAt @(n - 1)) (bcAt @(n - 1 + n)))
+                                    (bcDrop @(n + n))
+                                    #>> bc
+                                    #>> bcPar
+                                      (bcDrop @1)
+                                      (bcTake @1)
+                                )
+                            )
+                              #>> bcPar @((n - 1) + (n - 1) + x + 1) @(n - 1) @1
+                                (bcTake @((n - 1) + (n - 1) + x) #>> bcZipFoldLeft bc)
+                                (bcDrop @((n - 1) + (n - 1) + x))
 
 bcExpand :: forall a n f. (KnownNat n, KnownNat a) => BitCircuit f a (n * a)
 bcExpand = case cmpNat (natSing @n) (natSing @0) of

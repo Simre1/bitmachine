@@ -22,12 +22,15 @@ library
         BitMachine.Circuit
         BitMachine.Circuit.Combinators
         BitMachine.Circuit.Components
+        BitMachine.Circuit.Pretty
         BitMachine.Eval
         BitMachine.Bits
         BitMachine.BitCircuit
         BitMachine.BitCircuit.Combinators
+        BitMachine.BitCircuit.Pretty
         BitMachine.Proofs
         BitMachine.Effects
+        BitMachine.Simplify
 
         Data.List.Sized
     -- other-modules:
@@ -41,9 +44,12 @@ library
         profunctors,
         constraints,
         vector-sized,
+        bitvec,
         ghc-typelits-natnormalise,
-        ghc-typelits-knownnat
-        
+        ghc-typelits-knownnat,
+        reactimate,
+        prettyprinter,
+        prettyprinter-ansi-terminal
     hs-source-dirs:   src
     default-language: GHC2021
     default-extensions:
